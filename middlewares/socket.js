@@ -2,6 +2,7 @@ const io = require('socket.io');
 const heartbeats = require('heartbeats');
 const timer = require('./timer');
 
+// eslint-disable-next-line consistent-return
 const changePhase = (runTime, stopTime, phase) => {
   const production = {
     currentTime: [...stopTime], phase: 'production',
