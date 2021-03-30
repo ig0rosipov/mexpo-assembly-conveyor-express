@@ -8,6 +8,7 @@ let timer = [0, 0, 5];
 let phase = 'starting';
 let isPauseButtonPressed = true;
 let isEmergencyButtonPressed = false;
+let isEmergencySensorReleased = false;
 
 const changePhase = (currentPhase) => {
   switch (currentPhase) {
@@ -49,16 +50,22 @@ const tick = (ioServer) => {
     currentTime: timer,
     phase,
     emergency: isEmergencyButtonPressed,
+    sensor: isEmergencySensorReleased,
   });
 };
 
 const startTimer = (heart, ioServer) => {
   heart.createEvent(1, () => {
-    if (isPauseButtonPressed || isEmergencyButtonPressed) {
+    if (
+      isPauseButtonPressed
+      || isEmergencyButtonPressed
+      || isEmergencySensorReleased
+    ) {
       ioServer.sockets.emit('time', {
         currentTime: timer,
         phase,
         emergency: isEmergencyButtonPressed,
+        sensor: isEmergencySensorReleased,
       });
       heart.killAllEvents();
     } else {
@@ -75,11 +82,16 @@ module.exports = (req, res, next) => {
     },
   });
 
-  if (req.arduino && req.arduino.status === 'emergency') {
-    console.log('EMERGENCY');
-    isEmergencyButtonPressed = true;
+  if (req.arduino) {
+    if (req.arduino.status === 'emergency') {
+      console.log('EMERGENCY');
+      isEmergencyButtonPressed = true;
+    }
+    if (req.arduino && req.arduino.status === 'sensor') {
+      console.log('SENSOR');
+      isEmergencySensorReleased = true;
+    }
   }
-
   ioServer.on('connection', (socket) => {
     console.log('connected ', socket.id);
     socket.on('timerState', (state) => {
@@ -94,10 +106,12 @@ module.exports = (req, res, next) => {
 
     socket.on('resetAlarm', () => {
       isEmergencyButtonPressed = false;
+      isEmergencySensorReleased = false;
       ioServer.sockets.emit('time', {
         currentTime: timer,
         phase,
         emergency: isEmergencyButtonPressed,
+        sensor: isEmergencySensorReleased,
       });
     });
 
