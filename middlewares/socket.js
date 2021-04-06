@@ -1,124 +1,76 @@
-const io = require('socket.io');
 const heartbeats = require('heartbeats');
-const timer = require('./timer');
+const io = require('socket.io');
+const decreaseTimer = require('./timer');
 
-// eslint-disable-next-line consistent-return
-const changePhase = (runTime, stopTime, phase, prevPhase) => {
-  switch (phase) {
+let serverRunTime = [0, 0, 5];
+let serverStopTime = [0, 0, 10];
+let timer = [0, 0, 5];
+let phase = 'starting';
+let isPauseButtonPressed = true;
+let isEmergencyButtonPressed = false;
+let isEmergencySensorReleased = false;
+
+const changePhase = (currentPhase) => {
+  switch (currentPhase) {
     case 'starting':
-      return {
-        currentTime: [...stopTime],
-        phase: 'production',
-        prevPhase: prevPhase === null ? 'running' : phase,
-        bufferPhase: 'production',
-      };
+      timer = serverStopTime;
+      phase = 'production';
+      break;
     case 'production':
-      return {
-        currentTime: [...runTime],
-        phase: 'running',
-        prevPhase: phase,
-        bufferPhase: 'running',
-      };
+      timer = serverRunTime;
+      phase = 'running';
+      break;
     case 'running':
-      return {
-        currentTime: [...stopTime],
-        phase: 'production',
-        prevPhase: phase,
-        bufferPhase: 'production',
-      };
-    case 'emergency':
-      return {
-        currentTime: [0, 0, 3],
-        phase: 'starting',
-        prevPhase: phase,
-        bufferPhase: 'starting',
-      };
+      timer = serverStopTime;
+      phase = 'production';
+      break;
     default:
       break;
   }
 };
 
-let timeData;
-let timerSetup;
-let isTimerPaused = false;
-let isClientDataSended = false;
+const isTimerFinished = (currentTime) => {
+  const [hours, minutes, seconds] = currentTime;
 
-const ticker = (socket) => {
-  if (isClientDataSended) {
-    console.log(`tick ${timeData.currentTime}`);
-    timeData = timer({ ...timeData }, isTimerPaused);
-    if (timeData.status && timeData.status === 'done') {
-      timeData = changePhase(
-        timerSetup.runTime,
-        timerSetup.stopTime,
-        timeData.phase,
-        timeData.prevPhase,
-      );
-    }
-    socket.emit('time', timeData);
+  if (hours <= 0 && minutes <= 0 && seconds <= 0) {
+    return true;
   }
+
+  return false;
 };
 
-const changeTimerState = (heart, state, socket) => {
-  heart.killAllEvents();
-  isTimerPaused = state;
-  if (!state) {
-    heart.createEvent(1, () => {
-      ticker(socket);
-    });
+const tick = (ioServer) => {
+  if (isTimerFinished(timer)) {
+    changePhase(phase);
+  } else {
+    timer = decreaseTimer(timer);
   }
-};
-
-const resetAlarm = (heart, socket) => {
-  heart.killAllEvents();
-  timeData = {
-    ...timeData,
-    phase: timeData.bufferPhase,
-  };
-  socket.emit('time', timeData);
-};
-
-const updateTimer = (heart, socket, clientData) => {
-  heart.killAllEvents();
-  const {
-    runTime, stopTime, currentTime, phase,
-  } = clientData;
-
-  timerSetup = {
-    runTime,
-    stopTime,
-  };
-
-  timeData = {
-    currentTime,
+  console.log(timer, phase);
+  ioServer.sockets.emit('time', {
+    currentTime: timer,
     phase,
-    prevPhase: null,
-    bufferPhase: phase,
-  };
-
-  isClientDataSended = true;
-  console.log(isClientDataSended);
-  heart.createEvent(1, () => {
-    ticker(socket);
+    emergency: isEmergencyButtonPressed,
+    sensor: isEmergencySensorReleased,
   });
 };
 
-const connectSocket = (heart, socket) => {
-  heart.killAllEvents();
-  console.log('connected ', socket.id);
+const startTimer = (heart, ioServer) => {
   heart.createEvent(1, () => {
-    ticker(socket);
-  });
-  socket.on('timerState', (state) => {
-    changeTimerState(heart, state, socket);
-  });
-
-  socket.on('resetAlarm', () => {
-    resetAlarm(heart, socket);
-  });
-
-  socket.on('changeTimer', (clientData) => {
-    updateTimer(heart, socket, clientData);
+    if (
+      isPauseButtonPressed
+      || isEmergencyButtonPressed
+      || isEmergencySensorReleased
+    ) {
+      ioServer.sockets.emit('time', {
+        currentTime: timer,
+        phase,
+        emergency: isEmergencyButtonPressed,
+        sensor: isEmergencySensorReleased,
+      });
+      heart.killAllEvents();
+    } else {
+      tick(ioServer);
+    }
   });
 };
 
@@ -130,18 +82,51 @@ module.exports = (req, res, next) => {
     },
   });
 
-  if (req.arduino && req.arduino.status === 'emergency') {
-    console.log('EMERGENCY');
-    isTimerPaused = true;
-    heart.killAllEvents();
-
-    timeData = {
-      ...timeData,
-      phase: 'emergency',
-    };
+  if (req.arduino) {
+    if (req.arduino.status === 'emergency') {
+      console.log('EMERGENCY');
+      isEmergencyButtonPressed = true;
+    }
+    if (req.arduino && req.arduino.status === 'sensor') {
+      console.log('SENSOR');
+      isEmergencySensorReleased = true;
+    }
   }
   ioServer.on('connection', (socket) => {
-    connectSocket(heart, socket);
+    console.log('connected ', socket.id);
+    socket.on('timerState', (state) => {
+      isPauseButtonPressed = state;
+      if (state === true) {
+        heart.killAllEvents();
+      } else {
+        heart.killAllEvents();
+        startTimer(heart, ioServer);
+      }
+    });
+
+    socket.on('resetAlarm', () => {
+      isEmergencyButtonPressed = false;
+      isEmergencySensorReleased = false;
+      ioServer.sockets.emit('time', {
+        currentTime: timer,
+        phase,
+        emergency: isEmergencyButtonPressed,
+        sensor: isEmergencySensorReleased,
+      });
+    });
+
+    socket.on('changeTimer', (clientData) => {
+      const { runTime, stopTime } = clientData;
+      console.log(runTime, stopTime);
+      serverRunTime = runTime;
+      serverStopTime = stopTime;
+      phase = 'starting';
+      timer = [0, 0, 3];
+      isPauseButtonPressed = false;
+      heart.killAllEvents();
+      startTimer(heart, ioServer);
+    });
   });
+  startTimer(heart, ioServer);
   next();
 };
