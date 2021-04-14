@@ -1,8 +1,8 @@
 const uiRouter = require('express').Router();
 const { run, stop, setTime } = require('../controllers/ui');
 
-uiRouter.get('/run', run);
-uiRouter.get('/stop', stop);
-uiRouter.post('/set-time', setTime);
+uiRouter.get('/api/run', run);
+uiRouter.get('/api/stop', stop);
+uiRouter.post('/api/set-time', setTime);
 
 module.exports = uiRouter;

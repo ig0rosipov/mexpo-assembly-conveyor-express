@@ -1,5 +1,6 @@
 const heartbeats = require('heartbeats');
 const io = require('socket.io');
+const config = require('../configs/config');
 const decreaseTimer = require('./timer');
 
 let serverRunTime = [0, 0, 5];
@@ -78,8 +79,9 @@ module.exports = (req, res, next) => {
   const heart = heartbeats.createHeart(1000);
   const ioServer = io(req.server, {
     cors: {
-      origin: '*',
+      origin: config.allowedUrls,
     },
+    path: '/api/socket.io',
   });
 
   if (req.arduino) {

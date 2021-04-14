@@ -1,8 +1,8 @@
 const presetRouter = require('express').Router();
 const { getAllPresets, addPreset, deletePreset } = require('../controllers/presets');
 
-presetRouter.get('/presets', getAllPresets);
-presetRouter.post('/presets', addPreset);
-presetRouter.delete('/presets/:presetId', deletePreset);
+presetRouter.get('/api/presets', getAllPresets);
+presetRouter.post('/api/presets', addPreset);
+presetRouter.delete('/api/presets/:presetId', deletePreset);
 
 module.exports = presetRouter;

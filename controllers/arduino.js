@@ -3,7 +3,7 @@ module.exports.emergency = (req, res, next) => {
     status: 'emergency',
   };
 
-  res.send({
+  res.status(200).send({
     status: 'emergency',
   });
   next();
@@ -14,7 +14,7 @@ module.exports.sensor = (req, res, next) => {
     status: 'sensor',
   };
 
-  res.send({
+  res.status(200).send({
     staus: 'sensor',
   });
 

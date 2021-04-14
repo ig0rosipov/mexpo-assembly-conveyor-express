@@ -5,23 +5,14 @@ const mongoose = require('mongoose');
 const app = express();
 
 const cors = require('cors');
-
+const config = require('./configs/config');
 const index = require('./routes/index');
 const socket = require('./middlewares/socket');
 
 const { DB_NAME } = process.env;
 
-const allowedUrls = [
-  'http://lvh.me/',
-  'http://lvh.me/api',
-  'http://localhost/',
-  'http://localhost:5000/',
-  'http://localhost:3000/',
-  'http://192.168.25.169/',
-];
-
 const corsOptions = {
-  origin: allowedUrls,
+  origin: config.allowedUrls,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Access-Control-Allow-Headers', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
@@ -37,6 +28,10 @@ mongoose.connect(`mongodb://localhost:27017/${DB_NAME}`, {
   useFindAndModify: false,
 });
 
+app.get('/api', (req, res, next) => {
+  res.send('<h2>Conveyor API</h2>');
+});
+
 app.use(index);
 
 const server = app.listen(7000, () => {
@@ -50,5 +45,3 @@ app.use((req, res, next) => {
 });
 
 app.use(socket);
-
-// app.use(socket);
