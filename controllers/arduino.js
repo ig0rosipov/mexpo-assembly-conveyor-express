@@ -20,3 +20,15 @@ module.exports.sensor = (req, res, next) => {
 
   next();
 };
+
+module.exports.manual = (req, res, next) => {
+  req.arduino = {
+    status: 'manual',
+  };
+
+  res.status(200).send({
+    status: 'sensor',
+  });
+
+  next();
+};

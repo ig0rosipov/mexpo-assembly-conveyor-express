@@ -10,6 +10,7 @@ let phase = 'starting';
 let isPauseButtonPressed = true;
 let isEmergencyButtonPressed = false;
 let isEmergencySensorReleased = false;
+let isManualModeEnabled = false;
 
 const changePhase = (currentPhase) => {
   switch (currentPhase) {
@@ -52,6 +53,7 @@ const tick = (ioServer) => {
     phase,
     emergency: isEmergencyButtonPressed,
     sensor: isEmergencySensorReleased,
+    manual: isManualModeEnabled,
   });
 };
 
@@ -61,12 +63,14 @@ const startTimer = (heart, ioServer) => {
       isPauseButtonPressed
       || isEmergencyButtonPressed
       || isEmergencySensorReleased
+      || isManualModeEnabled
     ) {
       ioServer.sockets.emit('time', {
         currentTime: timer,
         phase,
         emergency: isEmergencyButtonPressed,
         sensor: isEmergencySensorReleased,
+        manual: isManualModeEnabled,
       });
       heart.killAllEvents();
     } else {
@@ -89,15 +93,20 @@ module.exports = (req, res, next) => {
       console.log('EMERGENCY');
       isEmergencyButtonPressed = true;
     }
-    if (req.arduino && req.arduino.status === 'sensor') {
+    if (req.arduino.status === 'sensor') {
       console.log('SENSOR');
       isEmergencySensorReleased = true;
+    }
+    if (req.arduino.status === 'manual') {
+      console.log('MANUAL');
+      isManualModeEnabled = true;
     }
   }
   ioServer.on('connection', (socket) => {
     console.log('connected ', socket.id);
     socket.on('timerState', (state) => {
       isPauseButtonPressed = state;
+      isManualModeEnabled = state;
       if (state === true) {
         heart.killAllEvents();
       } else {
@@ -114,6 +123,7 @@ module.exports = (req, res, next) => {
         phase,
         emergency: isEmergencyButtonPressed,
         sensor: isEmergencySensorReleased,
+        manual: isManualModeEnabled,
       });
     });
 
