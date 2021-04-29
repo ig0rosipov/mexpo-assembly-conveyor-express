@@ -83,7 +83,18 @@ module.exports = (req, res, next) => {
   const heart = heartbeats.createHeart(1000);
   const ioServer = io(req.server, {
     cors: {
-      origin: config.allowedUrls,
+      origin: [
+        'http://lvh.me:3000',
+        'http://localhost:3000',
+        'ws://localhost:3000',
+        'http://localhost:5000',
+        'ws://localhost:5000',
+        'http://192.168.64.254',
+        'ws://192.168.64.254',
+        '192.168.64.254',
+        'http://192.168.64.3',
+        '192.168.64.3',
+      ],
     },
     path: '/api/socket.io',
   });

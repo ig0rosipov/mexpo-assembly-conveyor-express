@@ -12,9 +12,25 @@ const socket = require('./middlewares/socket');
 const { DB_NAME } = process.env;
 
 const corsOptions = {
-  origin: config.allowedUrls,
+  origin: [
+    'http://lvh.me:3000',
+    'http://localhost:3000',
+    'ws://localhost:3000',
+    'http://localhost:5000',
+    'ws://localhost:5000',
+    'http://192.168.64.254',
+    'ws://192.168.64.254',
+    '192.168.64.254',
+    'http://192.168.64.3',
+    '192.168.64.3',
+  ],
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Access-Control-Allow-Headers', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Access-Control-Allow-Headers',
+    'Authorization',
+    'X-Requested-With',
+  ],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
