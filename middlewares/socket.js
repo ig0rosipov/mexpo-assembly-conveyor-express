@@ -115,6 +115,17 @@ module.exports = (req, res, next) => {
   }
   ioServer.on('connection', (socket) => {
     console.log('connected ', socket.id);
+
+    socket.on('pauseState', (state) => {
+      isPauseButtonPressed = state;
+      if (state === true) {
+        heart.killAllEvents();
+      } else {
+        heart.killAllEvents();
+        startTimer(heart, ioServer);
+      }
+    });
+
     socket.on('timerState', (state) => {
       isPauseButtonPressed = state;
       isManualModeEnabled = state;
