@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const app = express();
 
 const cors = require('cors');
-const config = require('./configs/config');
 const index = require('./routes/index');
 const socket = require('./middlewares/socket');
 
