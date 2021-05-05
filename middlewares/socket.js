@@ -45,6 +45,7 @@ const isTimerFinished = (currentTime) => {
 
 const tick = (ioServer) => {
   if (isTimerFinished(timer)) {
+    console.log(isPhaseChangeAllowed);
     if (isPhaseChangeAllowed) {
       changePhase(phase);
     }
