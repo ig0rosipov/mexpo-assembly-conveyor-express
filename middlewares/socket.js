@@ -11,6 +11,7 @@ let isPauseButtonPressed = true;
 let isEmergencyButtonPressed = false;
 let isEmergencySensorReleased = false;
 let isManualModeEnabled = false;
+let isPhaseChangeAllowed = false;
 
 const changePhase = (currentPhase) => {
   switch (currentPhase) {
@@ -29,6 +30,7 @@ const changePhase = (currentPhase) => {
     default:
       break;
   }
+  isPhaseChangeAllowed = false;
 };
 
 const isTimerFinished = (currentTime) => {
@@ -119,6 +121,10 @@ module.exports = (req, res, next) => {
   }
   ioServer.on('connection', (socket) => {
     console.log('connected ', socket.id);
+
+    socket.on('changePhase', (isAllowed) => {
+      isPhaseChangeAllowed = isAllowed;
+    });
 
     socket.on('pauseState', (state) => {
       isPauseButtonPressed = state;
