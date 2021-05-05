@@ -45,11 +45,9 @@ const isTimerFinished = (currentTime) => {
 
 const tick = (ioServer) => {
   if (isTimerFinished(timer)) {
-    ioServer.sockets.on('changePhase', (isAllowed) => {
-      if (isAllowed) {
-        changePhase(phase);
-      }
-    });
+    if (isPhaseChangeAllowed) {
+      changePhase(phase);
+    }
   } else {
     timer = decreaseTimer(timer);
   }
