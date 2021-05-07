@@ -1,4 +1,4 @@
-const currentIp = '192.168.25.88';
+const currentIp = '192.168.64.3';
 
 const addresses = {
   mainApi: `http://${currentIp}/api`,

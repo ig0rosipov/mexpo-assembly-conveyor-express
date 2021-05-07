@@ -1,6 +1,5 @@
 const heartbeats = require('heartbeats');
 const io = require('socket.io');
-const config = require('../configs/config');
 const decreaseTimer = require('./timer');
 
 let serverRunTime = [0, 0, 5];
@@ -30,7 +29,6 @@ const changePhase = (currentPhase) => {
     default:
       break;
   }
-  isPhaseChangeAllowed = false;
 };
 
 const isTimerFinished = (currentTime) => {
@@ -44,22 +42,31 @@ const isTimerFinished = (currentTime) => {
 };
 
 const tick = (ioServer) => {
+  console.log(isPhaseChangeAllowed);
   if (isTimerFinished(timer)) {
     console.log(isPhaseChangeAllowed);
     if (isPhaseChangeAllowed) {
       changePhase(phase);
+      isPhaseChangeAllowed = false;
+      ioServer.sockets.emit('time', {
+        currentTime: timer,
+        phase,
+        emergency: isEmergencyButtonPressed,
+        sensor: isEmergencySensorReleased,
+        manual: isManualModeEnabled,
+      });
     }
   } else {
     timer = decreaseTimer(timer);
+    ioServer.sockets.emit('time', {
+      currentTime: timer,
+      phase,
+      emergency: isEmergencyButtonPressed,
+      sensor: isEmergencySensorReleased,
+      manual: isManualModeEnabled,
+    });
   }
   console.log(timer, phase);
-  ioServer.sockets.emit('time', {
-    currentTime: timer,
-    phase,
-    emergency: isEmergencyButtonPressed,
-    sensor: isEmergencySensorReleased,
-    manual: isManualModeEnabled,
-  });
 };
 
 const startTimer = (heart, ioServer) => {
@@ -159,12 +166,12 @@ module.exports = (req, res, next) => {
     });
 
     socket.on('changeTimer', (clientData) => {
-      const { runTime, stopTime } = clientData;
+      const { runTime, stopTime, currentTime } = clientData;
       console.log(runTime, stopTime);
       serverRunTime = runTime;
       serverStopTime = stopTime;
-      phase = 'starting';
-      timer = [0, 0, 3];
+      phase = clientData.phase;
+      timer = currentTime;
       isPauseButtonPressed = false;
       heart.killAllEvents();
       startTimer(heart, ioServer);
