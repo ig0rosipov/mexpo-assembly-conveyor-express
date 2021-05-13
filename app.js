@@ -1,37 +1,14 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
+const { corsOptions } = require('./configs/config');
 
 const app = express();
-
-const cors = require('cors');
 const index = require('./routes/index');
 const socket = require('./middlewares/socket');
 
-const { DB_NAME } = process.env;
-
-const corsOptions = {
-  origin: [
-    'http://lvh.me:3000',
-    'http://localhost:3000',
-    'ws://localhost:3000',
-    'http://localhost:5000',
-    'ws://localhost:5000',
-    'http://192.168.64.254',
-    'ws://192.168.64.254',
-    '192.168.64.254',
-    'http://192.168.64.3',
-    '192.168.64.3',
-  ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  allowedHeaders: [
-    'Content-Type',
-    'Access-Control-Allow-Headers',
-    'Authorization',
-    'X-Requested-With',
-  ],
-  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-};
+const { DB_NAME, PORT } = process.env;
 
 app.use(cors(corsOptions));
 
@@ -43,14 +20,14 @@ mongoose.connect(`mongodb://localhost:27017/${DB_NAME}`, {
   useFindAndModify: false,
 });
 
-app.get('/api', (req, res, next) => {
+app.get('/api', (req, res) => {
   res.send('<h2>Conveyor API</h2>');
 });
 
 app.use(index);
 
-const server = app.listen(7000, () => {
-  console.log(`listening on ${7000}`);
+const server = app.listen(PORT, () => {
+  console.log(`listening on ${PORT}`);
 });
 
 app.use((req, res, next) => {

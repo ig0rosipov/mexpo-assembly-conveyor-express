@@ -1,6 +1,6 @@
 const Preset = require('../models/preset');
 
-module.exports.getAllPresets = (req, res, next) => {
+module.exports.getAllPresets = (req, res) => {
   Preset.find({})
     .then((presetList) => {
       res.send(presetList);
@@ -8,7 +8,7 @@ module.exports.getAllPresets = (req, res, next) => {
     .catch((err) => res.send(err));
 };
 
-module.exports.addPreset = (req, res, next) => {
+module.exports.addPreset = (req, res) => {
   const { name, runTime, stopTime } = req.body;
   Preset.create({ name, runTime, stopTime })
     .then((preset) => {
@@ -17,7 +17,7 @@ module.exports.addPreset = (req, res, next) => {
     .catch((err) => res.send(err));
 };
 
-module.exports.deletePreset = (req, res, next) => {
+module.exports.deletePreset = (req, res) => {
   Preset.findOneAndDelete({ _id: req.params.presetId })
     .then((deletedPreset) => {
       res.send(deletedPreset);

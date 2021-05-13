@@ -1,6 +1,7 @@
 const heartbeats = require('heartbeats');
 const io = require('socket.io');
 const decreaseTimer = require('./timer');
+const { socketOptions } = require('../configs/config');
 
 let serverRunTime = [0, 0, 5];
 let serverStopTime = [0, 0, 10];
@@ -42,9 +43,7 @@ const isTimerFinished = (currentTime) => {
 };
 
 const tick = (ioServer) => {
-  console.log(isPhaseChangeAllowed);
   if (isTimerFinished(timer)) {
-    console.log(isPhaseChangeAllowed);
     if (isPhaseChangeAllowed) {
       changePhase(phase);
       isPhaseChangeAllowed = false;
@@ -66,7 +65,6 @@ const tick = (ioServer) => {
       manual: isManualModeEnabled,
     });
   }
-  console.log(timer, phase);
 };
 
 const startTimer = (heart, ioServer) => {
@@ -93,41 +91,20 @@ const startTimer = (heart, ioServer) => {
 
 module.exports = (req, res, next) => {
   const heart = heartbeats.createHeart(1000);
-  const ioServer = io(req.server, {
-    cors: {
-      origin: [
-        'http://lvh.me:3000',
-        'http://localhost:3000',
-        'ws://localhost:3000',
-        'http://localhost:5000',
-        'ws://localhost:5000',
-        'http://192.168.64.254',
-        'ws://192.168.64.254',
-        '192.168.64.254',
-        'http://192.168.64.3',
-        '192.168.64.3',
-      ],
-    },
-    path: '/api/socket.io',
-  });
+  const ioServer = io(req.server, socketOptions);
 
   if (req.arduino) {
     if (req.arduino.status === 'emergency') {
-      console.log('EMERGENCY');
       isEmergencyButtonPressed = true;
     }
     if (req.arduino.status === 'sensor') {
-      console.log('SENSOR');
       isEmergencySensorReleased = true;
     }
     if (req.arduino.status === 'manual') {
-      console.log('MANUAL');
       isManualModeEnabled = true;
     }
   }
   ioServer.on('connection', (socket) => {
-    console.log('connected ', socket.id);
-
     socket.on('changePhase', (isAllowed) => {
       isPhaseChangeAllowed = isAllowed;
     });
@@ -167,7 +144,6 @@ module.exports = (req, res, next) => {
 
     socket.on('changeTimer', (clientData) => {
       const { runTime, stopTime, currentTime } = clientData;
-      console.log(runTime, stopTime);
       serverRunTime = runTime;
       serverStopTime = stopTime;
       phase = clientData.phase;
